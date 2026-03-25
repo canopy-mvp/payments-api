@@ -1,5 +1,5 @@
 ---
-description: Architecture standards from Canopy (Shon Paz, locked)
+description: Architecture standards from Canopy (canopy-mvp, locked)
 globs:
 alwaysApply: true
 ---
