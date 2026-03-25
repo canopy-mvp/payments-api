@@ -28,11 +28,11 @@ Each entity gets its own repository with typed methods: create, findById, findMa
 Route handlers call service functions, which call repositories. Never skip a layer.
 This ensures testability (mock repositories), separation of concerns, and consistent query patterns.
 
-## Fastify Framework
-Fastify is the standard framework, used in 5 repos (payments-api, users-service, api-gateway, notifications-service, merchant-onboarding). Use Fastify for consistency. Do not introduce alternative frameworks without architecture review.
-
 ## React Framework
 React is the standard framework, used in 3 repos (merchant-dashboard, admin-portal, shared-ui). Use React for consistency. Do not introduce alternative frameworks without architecture review.
+
+## Fastify Framework
+Fastify is the standard framework, used in 5 repos (payments-api, users-service, api-gateway, notifications-service, merchant-onboarding). Use Fastify for consistency. Do not introduce alternative frameworks without architecture review.
 
 ## Prisma Framework
 Prisma is the standard framework, used in 3 repos (payments-api, users-service, merchant-onboarding). Use Prisma for consistency. Do not introduce alternative frameworks without architecture review.
