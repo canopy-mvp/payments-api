@@ -1,27 +1,82 @@
 ---
-description: Security constraints from Canopy (canopy-mvp, locked)
+description: Security & compliance rules from Canopy (canopy-mvp, locked)
 globs:
 alwaysApply: true
 ---
 
-# Security constraints
+# Security & Compliance
 
-## No hardcoded secrets
-Never hardcode secrets, API keys, tokens, passwords, or connection strings in source code.
-Use environment variables loaded via a config module, or a secrets manager (AWS Secrets Manager, HashiCorp Vault, Doppler).
-Reject any PR that contains string literals assigned to variables named secret, key, token, password, or api_key.
-Use .env.example to document required variables without values.
+> ⚠️ LOCKED — These rules cannot be overridden.
 
-## Input validation at boundaries
-Validate ALL external input at system boundaries using schema validation (Zod, Joi, or framework-native schemas).
-This includes: API request bodies, query parameters, path parameters, webhook payloads, file uploads, and headers.
-Define schemas co-located with handlers. Derive TypeScript types from schemas using z.infer<> or equivalent.
-Never trust client-side validation alone. Validate server-side even if the frontend validates.
-Reject invalid input early with descriptive error messages.
+## Secrets & Credentials
 
-## No PII in logs or error responses
-Never log personally identifiable information: emails, phone numbers, IP addresses, physical addresses, SSNs, credit card numbers, or names.
-Never include PII in error response bodies or messages.
-Safe to log: internal UUIDs, request IDs, action descriptions, error codes, timestamps, and tenant/org IDs.
-Use structured logging with explicit field selection — never log entire request bodies or user objects.
-If a logging library supports redaction patterns, enable them as a second line of defense.
+### No hardcoded secrets
+Check for: API keys, passwords, tokens, private keys, connection strings hardcoded in source code, config files, or comments.
+Flag patterns: `sk_live_`, `AKIA`, `-----BEGIN RSA`, `password=`, `secret=`, `Bearer ` followed by a literal token.
+Fix: reference from secrets manager (Vault, AWS Secrets Manager, Doppler) or environment variables.
+Never commit `.env` files. Use `.env.example` to document required variables without values.
+Every PR containing a literal secret must be blocked.
+
+## Injection Prevention
+
+### Parameterized queries only
+Check for: SQL queries built with string concatenation or template literals containing user input.
+Flag: `query("SELECT * FROM users WHERE id = " + id)`, f-strings in SQL, `${variable}` inside query strings.
+Fix: use parameterized queries (`$1`, `?`, `:param`), prepared statements, or ORM bindings.
+This applies to SQL, NoSQL (`$where`, `$ne` operators), LDAP, and OS commands.
+Injection attacks are the most exploited vulnerability class and are trivially preventable.
+
+## Data Privacy & PII
+
+### Never disable TLS/SSL verification
+Check for: `rejectUnauthorized: false`, `verify=False`, `InsecureSkipVerify: true`, `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+Flag as CRITICAL if found in any HTTP client, database connection, or API call.
+Fix: use proper certificate chains. For local dev, use mkcert to create locally-trusted certificates.
+Never accept self-signed certificates in application code. Disabling TLS makes all traffic vulnerable to interception.
+
+### Never log sensitive data
+Check for: passwords, API keys, tokens, session IDs, credit card numbers, SSNs, emails, phone numbers in log statements.
+Flag: `console.log(user)`, `logger.info(request.body)`, `JSON.stringify(patient)` in logging context.
+Safe to log: internal UUIDs, request IDs, action descriptions, error codes, timestamps.
+Logs are broadly accessible, shipped to third-party services, and retained long-term — they are a primary vector for data exposure.
+
+### Encrypt sensitive data at rest and in transit
+Check for: plaintext password storage, unencrypted database connections, HTTP (not HTTPS) API calls.
+Required: TLS 1.2+ for all network communication, AES-256 or equivalent for storage.
+Passwords: always bcrypt, scrypt, or argon2 with appropriate work factors. Never MD5 or SHA for passwords.
+Never implement custom cryptographic algorithms. Use established libraries (crypto, libsodium, etc.).
+
+### Data residency and region awareness
+Check for: tenant data storage and processing respects the tenant's configured region (EU, US, APAC).
+Flag: cross-region data transfers without checking tenant residency setting.
+Flag: hardcoded region references (us-east-1) without tenant region lookup.
+Fix: read tenant region from config and route storage/processing to the correct regional endpoint.
+
+## Authorization & Access Control
+
+### Authorization on every endpoint
+Check for: API endpoints that check authentication (who you are) but skip authorization (what you can do).
+Flag: missing ownership checks on object-level routes (`GET/PUT/DELETE /:id`), admin endpoints without role verification.
+Required: verify the authenticated caller is authorized for the specific operation on the specific resource.
+Never rely on client-side route guards as the only access control. Enforce server-side.
+BOLA/IDOR (accessing other users' data by changing an ID) is the #1 API vulnerability.
+
+### Tenant data isolation
+Check for: every database query on customer data includes a tenant_id filter.
+Flag: any SELECT, UPDATE, or DELETE on tenant-scoped tables without tenant_id in the WHERE clause.
+Flag: any API endpoint that returns data without validating the requesting user's tenant matches the data's tenant.
+Fix: add tenant_id filtering at the repository layer, not the route handler. A query without tenant_id is a data leak.
+
+## Destructive Operations
+
+### No unguarded destructive operations
+Check for: DELETE without WHERE, DROP TABLE, `rm -rf`, `git push --force`, `git reset --hard` without explicit confirmation.
+Flag: any operation that deletes data, drops tables, resets state, or modifies production infrastructure without a guard.
+Required: explicit confirmation flag, soft deletes preferred over hard deletes, rollback scripts for migrations.
+AI tools must never autonomously execute irreversible destructive operations.
+
+### Database changes through migrations only
+Check for: ad-hoc SQL scripts, direct ALTER TABLE calls outside migration files, manual schema changes.
+Required: all database schema changes go through the project's migration tool (Drizzle, Prisma, Alembic, Flyway, etc.).
+Every migration must have a corresponding rollback. Never connect to production to run manual queries.
+Direct modifications bypass change tracking, peer review, and rollback capability.
