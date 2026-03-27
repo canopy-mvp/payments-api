@@ -17,6 +17,136 @@ Fix: reference from secrets manager (Vault, AWS Secrets Manager, Doppler) or env
 Never commit `.env` files. Use `.env.example` to document required variables without values.
 Every PR containing a literal secret must be blocked.
 
+### Base64 secrets are not allowed
+Base64 encoding is NOT a security mechanism and must never be used to store, transmit, or manage sensitive information such as API keys, passwords, tokens, database credentials, or encryption keys. Base64 is merely an encoding format (RFC 4648) designed for safe text representation of binary data, not for confidentiality or integrity protection.
+
+## Why Base64 is Insufficient
+Base64 can be decoded trivially by anyone with basic technical knowledge or automated tools. It provides zero cryptographic protection and creates a false sense of security. If a Base64-encoded secret is exposed in code, logs, or configuration files, it is immediately compromised. Compliance frameworks including OWASP, PCI-DSS, HIPAA, and SOC 2 explicitly prohibit relying on encoding as a substitute for proper secret management.
+
+## Proper Secret Management Requirements
+1. **Use dedicated secret management systems**: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, Google Cloud Secret Manager, or equivalent enterprise solutions
+2. **Never hardcode secrets**: All sensitive values must be injected at runtime from secure external sources
+3. **Use environment variables or secure vaults**: Configuration must reference secret storage systems, never contain the actual secrets
+4. **Implement encryption at rest and in transit**: Secrets in transit must use TLS 1.3+; secrets at rest must use AES-256 or equivalent
+5. **Enforce strict access controls**: Implement least-privilege access with audit logging for all secret access
+6. **Rotate secrets regularly**: Establish automated rotation policies (typically 30-90 days depending on risk)
+
+## DO
+- Use environment variables with values provided by secure CI/CD secret management systems
+- Store secrets in AWS Secrets Manager, Vault, or equivalent with proper IAM/RBAC policies
+- Implement secret scanning in pre-commit hooks (e.g., git-secrets, detect-secrets, TruffleHog)
+- Use `.env.example` files showing required keys WITHOUT values as documentation
+- Implement comprehensive audit logging for all secret access
+- Use sealed secrets or encryption in transit for configuration files
+
+## DO NOT
+- Encode secrets with Base64: `const apiKey = Buffer.from(secretValue).toString('base64')` ❌
+- Store Base64 strings in code: `const token = 'aGVsbG8gd29ybGQ='` ❌
+- Assume Base64 provides any security protection whatsoever
+- Commit any file containing Base64-encoded secrets to version control
+- Log or print Base64-encoded secrets for debugging
+- Use Base64 as a layer in multi-layer encoding (e.g., Base64 + XOR + Caesar cipher) as a homegrown security solution
+- Accept configuration that references Base64 strings from environment variables: `const secret = Buffer.from(process.env.SECRET, 'base64').toString()` ❌
+
+## Correct Implementation Examples
+
+### Node.js/TypeScript with dotenv
+```javascript
+// .env (NOT in version control, managed by secure system)
+API_KEY=sk-1234567890abcdef
+DATABASE_PASSWORD=secure_password_here
+
+// src/config.ts
+import dotenv from 'dotenv';
+dotenv.config();
+
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+  throw new Error('API_KEY environment variable is required');
+}
+// Use apiKey directly - it's already a string, no decoding needed
+```
+
+### Node.js with AWS Secrets Manager
+```javascript
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+
+const client = new SecretsManagerClient({ region: 'us-east-1' });
+
+async function getSecret(secretName) {
+  try {
+    const response = await client.send(
+      new GetSecretValueCommand({ SecretId: secretName })
+    );
+    return JSON.parse(response.SecretString);
+  } catch (error) {
+    throw new Error(`Failed to retrieve secret: ${error.message}`);
+  }
+}
+
+const credentials = await getSecret('prod/database-credentials');
+// credentials.username and credentials.password are now available
+```
+
+### Docker/Container Secret Injection
+```dockerfile
+# Dockerfile - NEVER include secrets
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY src ./src
+# Do NOT include: ENV API_KEY=xxx
+CMD ["node", "src/index.js"]
+```
+
+```yaml
+# docker-compose.yml
+services:
+  app:
+    build: .
+    environment:
+      # Reference external secrets, never hardcode
+      API_KEY: ${API_KEY}  # Provided at runtime
+      DATABASE_URL: ${DATABASE_URL}
+    # OR use Docker secrets
+    secrets:
+      - db_password
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt  # Securely managed, never in repo
+```
+
+## Pre-commit Hook Configuration
+Implement automated secret scanning to prevent accidental commits:
+
+```bash
+# .git/hooks/pre-commit
+#!/bin/bash
+set -e
+
+# Using detect-secrets
+detect-secrets scan --baseline .secrets.baseline
+if [ $? -ne 0 ]; then
+  echo "❌ Potential secrets detected. Commit aborted."
+  exit 1
+fi
+
+# Using git-secrets
+git secrets --pre_commit_hook -- "$@"
+
+echo "✓ Secret scan passed"
+```
+
+## Compliance and Audit Considerations
+- **PCI-DSS 3.4**: Render PAN unreadable anywhere it is stored (secrets must not be base64)
+- **OWASP A02:2021**: Cryptographic Failures - base64 is not cryptography
+- **SOC 2**: Requires encryption and proper access controls for sensitive data
+- **HIPAA**: Protected Health Information must use strong encryption, not encoding
+
+Maintain audit logs showing: who accessed what secret, when, from where, and why. Use centralized logging systems with tamper-proof features.
+
 ## Injection Prevention
 
 ### Parameterized queries only
@@ -25,19 +155,6 @@ Flag: `query("SELECT * FROM users WHERE id = " + id)`, f-strings in SQL, `${vari
 Fix: use parameterized queries (`$1`, `?`, `:param`), prepared statements, or ORM bindings.
 This applies to SQL, NoSQL (`$where`, `$ne` operators), LDAP, and OS commands.
 Injection attacks are the most exploited vulnerability class and are trivially preventable.
-
-### Input validation at system boundaries
-Check for: endpoints, webhooks, queue consumers, or file processors that use request data without schema validation.
-Required: every value crossing a trust boundary must be validated against an explicit schema before use.
-Use: Zod, Joi, JSON Schema, Pydantic, or framework-native validators.
-Validate: request bodies, query params, path params, headers, webhook payloads, file uploads.
-Never rely on client-side validation alone. Reject invalid input early with descriptive errors.
-
-### Context-appropriate output encoding
-Check for: user-supplied data rendered into HTML, URLs, JSON, XML, or shell commands without encoding.
-Flag: direct string interpolation in templates, `innerHTML` assignments, `dangerouslySetInnerHTML` without sanitization.
-Fix: apply context-specific encoding — HTML entity encoding for HTML, URL encoding for URLs, shell escaping for commands.
-Use framework-provided auto-escaping. Prevent XSS and output injection attacks.
 
 ## Data Privacy & PII
 
@@ -59,12 +176,6 @@ Required: TLS 1.2+ for all network communication, AES-256 or equivalent for stor
 Passwords: always bcrypt, scrypt, or argon2 with appropriate work factors. Never MD5 or SHA for passwords.
 Never implement custom cryptographic algorithms. Use established libraries (crypto, libsodium, etc.).
 
-### Data minimization
-Check for: `SELECT *` when only specific columns are needed, API responses returning entire records unnecessarily.
-Flag: endpoints returning user email/phone when only display name is needed, storing data "just in case."
-Fix: query only needed columns, return only needed fields, collect only required data.
-Over-collection increases breach blast radius and regulatory exposure.
-
 ### Data residency and region awareness
 Check for: tenant data storage and processing respects the tenant's configured region (EU, US, APAC).
 Flag: cross-region data transfers without checking tenant residency setting.
@@ -79,18 +190,6 @@ Flag: missing ownership checks on object-level routes (`GET/PUT/DELETE /:id`), a
 Required: verify the authenticated caller is authorized for the specific operation on the specific resource.
 Never rely on client-side route guards as the only access control. Enforce server-side.
 BOLA/IDOR (accessing other users' data by changing an ID) is the #1 API vulnerability.
-
-### Principle of least privilege
-Check for: admin/root credentials used at application runtime, wildcard IAM permissions, database users with SUPERUSER.
-Fix: every service account, DB connection, IAM role, and API key gets minimum permissions for its function.
-Use read-only access when writes aren't needed. Scope permissions to specific resources, not wildcards.
-Over-privileged credentials turn a minor vulnerability into a total system compromise.
-
-### Never implement custom authentication
-Check for: custom password hashing, hand-rolled JWT validation, DIY session management, custom OAuth flows.
-Fix: use the project's established auth system or a proven provider (Auth0, Firebase Auth, Cognito, Clerk).
-Custom auth implementations almost always contain subtle vulnerabilities: timing attacks, insecure token generation, improper session invalidation.
-Only build auth if you ARE the auth service. Otherwise, use what exists.
 
 ### Tenant data isolation
 Check for: every database query on customer data includes a tenant_id filter.
@@ -111,46 +210,3 @@ Check for: ad-hoc SQL scripts, direct ALTER TABLE calls outside migration files,
 Required: all database schema changes go through the project's migration tool (Drizzle, Prisma, Alembic, Flyway, etc.).
 Every migration must have a corresponding rollback. Never connect to production to run manual queries.
 Direct modifications bypass change tracking, peer review, and rollback capability.
-
-## Dependencies & Supply Chain
-
-### Minimize new dependencies
-Before adding a package, check if the functionality exists in: current project dependencies, language standard library, or 3-5 lines of code.
-Avoid packages for trivial operations (string padding, type checking, deep cloning).
-When a dependency is necessary: prefer well-maintained packages with broad adoption, active maintenance, and no known vulnerabilities.
-Every dependency is an attack surface, a licensing obligation, and a maintenance burden.
-
-### Pin dependency versions
-Check for: `*`, `latest`, `>=` in production dependencies. Flag as HIGH.
-Required: exact version pins or a committed lockfile (package-lock.json, pnpm-lock.yaml, poetry.lock, go.sum).
-Always commit the lockfile to version control.
-Unpinned dependencies mean your build can break or become compromised between runs without any code change.
-
-### Verify package identity before installing
-Before adding a dependency: confirm the exact package name and publisher.
-Check for: typosquatting (`lodahs` vs `lodash`), namespace confusion (`@company/utils` vs `company-utils`).
-Verify: repository link matches, download counts are reasonable, publication date is not suspiciously recent.
-Never install a package based solely on an AI suggestion without verification.
-
-## Error Exposure
-
-### No internal details in error responses
-Check for: stack traces, database error messages, SQL statements, file paths, or internal IDs in API responses.
-Fix: return a structured error with a stable error code, safe human-readable message, and request/correlation ID.
-Format: `{ "error": { "code": "SCREAMING_SNAKE_CASE", "message": "...", "requestId": "..." } }`
-Map all errors through a centralized error handler. Never pass raw exceptions to clients.
-
-## Resilience
-
-### Explicit timeouts on external calls
-Check for: HTTP requests, database queries, queue operations, external API calls without explicit timeouts.
-Flag: `fetch(url)` without `signal: AbortSignal.timeout()`, database queries without statement timeout.
-Fix: set explicit timeouts on every external call. Never rely on system defaults (often infinite).
-Also set limits: request body size, file upload size, pagination page size.
-A single missing timeout can cascade into thread exhaustion and full system outage.
-
-### Idempotent operations
-Check for: non-idempotent event handlers, queue consumers, webhook processors, retry-able API endpoints.
-Fix: use idempotency keys, upsert patterns, or conditional writes (`INSERT ... ON CONFLICT`).
-Test: calling the same operation twice with the same input should produce the same result.
-In distributed systems, duplicate delivery is guaranteed — non-idempotent handlers cause data corruption on retry.
