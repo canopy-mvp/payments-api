@@ -7,10 +7,6 @@ alwaysApply: true
 # Architecture & Patterns
 
 <!-- Source: canopy-mvp (org) -->
-## Use designated framework
-Use designated framework — enforce this standard across all code and AI-generated output.
-
-<!-- Source: canopy-mvp (org) -->
 ## Structured error handling
 Structured error handling — enforce this standard across all code and AI-generated output.
 

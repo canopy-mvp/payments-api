@@ -22,13 +22,6 @@ Flag as CRITICAL if found in any HTTP client, database connection, or API call.
 Fix: use proper certificate chains. For local dev, use mkcert to create locally-trusted certificates.
 Never accept self-signed certificates in application code. Disabling TLS makes all traffic vulnerable to interception.
 
-<!-- Source: canopy-mvp (org) -->
-#### Encrypt sensitive data at rest and in transit
-Check for: plaintext password storage, unencrypted database connections, HTTP (not HTTPS) API calls.
-Required: TLS 1.2+ for all network communication, AES-256 or equivalent for storage.
-Passwords: always bcrypt, scrypt, or argon2 with appropriate work factors. Never MD5 or SHA for passwords.
-Never implement custom cryptographic algorithms. Use established libraries (crypto, libsodium, etc.).
-
 ### Authorization & Access Control
 
 <!-- Source: canopy-mvp (org) -->
@@ -48,10 +41,6 @@ Flag: any operation that deletes data, drops tables, resets state, or modifies p
 Required: explicit confirmation flag, soft deletes preferred over hard deletes, rollback scripts for migrations.
 AI tools must never autonomously execute irreversible destructive operations.
 ## Architecture & Patterns
-
-<!-- Source: canopy-mvp (org) -->
-### Use designated framework
-Use designated framework — enforce this standard across all code and AI-generated output.
 
 <!-- Source: canopy-mvp (org) -->
 ### Structured error handling
