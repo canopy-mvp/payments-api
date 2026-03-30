@@ -43,6 +43,10 @@ AI tools must never autonomously execute irreversible destructive operations.
 ## Architecture & Patterns
 
 <!-- Source: canopy-mvp (org) -->
+### Use designated framework
+Use designated framework — enforce this standard across all code and AI-generated output.
+
+<!-- Source: canopy-mvp (org) -->
 ### Structured error handling
 Structured error handling — enforce this standard across all code and AI-generated output.
 
@@ -65,10 +69,6 @@ Unit test coverage — enforce this standard across all code and AI-generated ou
 <!-- Source: canopy-mvp (org) -->
 ### Code organization standards
 Code organization standards — enforce this standard across all code and AI-generated output.
-
-<!-- Source: canopy-mvp (org) -->
-### Naming conventions
-Naming conventions — enforce this standard across all code and AI-generated output.
 ## Knowledge & Context
 
 <!-- Source: canopy-mvp (org) -->
