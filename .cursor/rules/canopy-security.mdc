@@ -18,17 +18,11 @@ NEVER concatenate user input into SQL/NoSQL/LDAP queries. ALWAYS use parameteriz
 
 <!-- Source: canopy-mvp (org) -->
 ### Never disable TLS/SSL verification
-Check for: `rejectUnauthorized: false`, `verify=False`, `InsecureSkipVerify: true`, `NODE_TLS_REJECT_UNAUTHORIZED=0`.
-Flag as CRITICAL if found in any HTTP client, database connection, or API call.
-Fix: use proper certificate chains. For local dev, use mkcert to create locally-trusted certificates.
-Never accept self-signed certificates in application code. Disabling TLS makes all traffic vulnerable to interception.
+NEVER set `rejectUnauthorized: false`, `verify=False`, `InsecureSkipVerify: true`, or `NODE_TLS_REJECT_UNAUTHORIZED=0` in HTTP clients, database connections, or API calls. Flag as CRITICAL if found. Use proper certificate chains; for local dev, use mkcert to create locally-trusted certificates instead.
 
 <!-- Source: canopy-mvp (org) -->
 ### Encrypt sensitive data at rest and in transit
-Check for: plaintext password storage, unencrypted database connections, HTTP (not HTTPS) API calls.
-Required: TLS 1.2+ for all network communication, AES-256 or equivalent for storage.
-Passwords: always bcrypt, scrypt, or argon2 with appropriate work factors. Never MD5 or SHA for passwords.
-Never implement custom cryptographic algorithms. Use established libraries (crypto, libsodium, etc.).
+MUST use TLS 1.2+ for all network communication and AES-256+ for data at rest. NEVER store passwords in plaintext or use MD5/SHA for hashing; ALWAYS use bcrypt, scrypt, or argon2. NEVER implement custom crypto—use only established libraries (crypto, libsodium, openssl).
 
 ## Authorization & Access Control
 
