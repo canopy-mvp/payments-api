@@ -7,10 +7,6 @@ alwaysApply: true
 # Architecture & Patterns
 
 <!-- Source: canopy-mvp (org) -->
-## Use designated framework
-Use designated framework — enforce this standard across all code and AI-generated output.
-
-<!-- Source: canopy-mvp (org) -->
 ## Structured error handling
 Structured error handling — enforce this standard across all code and AI-generated output.
 
@@ -31,5 +27,9 @@ API versioning — enforce this standard across all code and AI-generated output
 Unit test coverage — enforce this standard across all code and AI-generated output.
 
 <!-- Source: canopy-mvp (org) -->
+## Use designated framework
+MUST use the designated framework for all new code and AI-generated output. NEVER introduce alternative frameworks without architecture review. Example: Use Next.js for all React projects, not Remix or Astro.
+
+<!-- Source: canopy-mvp (org) -->
 ## Code organization standards
-Code organization standards — enforce this standard across all code and AI-generated output.
+MUST organize code into logical modules by feature/domain. Use single-responsibility principle: one class/function per concern. Example: place user authentication in auth/ module, not mixed with payment logic. Enforce across all generated and existing code.
