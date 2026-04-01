@@ -7,10 +7,6 @@ alwaysApply: true
 # Knowledge & Context
 
 <!-- Source: canopy-mvp (org) -->
-## Domain vocabulary
-Domain vocabulary — enforce this standard across all code and AI-generated output.
-
-<!-- Source: canopy-mvp (org) -->
 ## System architecture map
 System architecture map — enforce this standard across all code and AI-generated output.
 
@@ -29,3 +25,7 @@ Onboarding guide — enforce this standard across all code and AI-generated outp
 <!-- Source: canopy-mvp (org) -->
 ## Temporal context
 Temporal context — enforce this standard across all code and AI-generated output.
+
+<!-- Source: canopy-mvp (org) -->
+## Domain vocabulary
+MUST use domain-specific terms consistently across all code, docs, and AI output. Example: use 'customer' not 'user', 'transaction' not 'payment'. Enforce via code review and linting rules.
