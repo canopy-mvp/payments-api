@@ -1,31 +1,41 @@
 ---
-description: Knowledge & context from Canopy (canopy-mvp)
+description: Knowledge & context from Canopy (canopy-mvp, locked)
 globs:
 alwaysApply: true
 ---
 
 # Knowledge & Context
 
-<!-- Source: canopy-mvp (org) -->
-## Domain vocabulary
-MUST use domain-specific terms consistently across all code, docs, and AI output. Example: use 'customer' not 'user', 'transaction' not 'payment'. Enforce via code review and linting rules.
+## Domain Vocabulary
 
 <!-- Source: canopy-mvp (org) -->
-## Decision records
-MUST create ADR (Architecture Decision Record) files for all significant technical decisions. File as docs/adr/NNNN-title.md with context, decision, and consequences. Example: docs/adr/0001-use-postgres.md explaining why PostgreSQL was chosen over MySQL.
+### Domain vocabulary
+MUST use consistent domain terms across code, docs, and output (e.g., 'customer' not 'user', 'transaction' not 'order'). Define all terms in CLAUDE.md glossary. Never invent synonyms for established concepts.
+
+## System Maps
 
 <!-- Source: canopy-mvp (org) -->
-## Temporal context
-ALWAYS include ISO 8601 timestamps (YYYY-MM-DDTHH:mm:ssZ) for time-sensitive operations, logs, and generated artifacts. Example: event_logged_at='2024-01-15T09:30:45Z' not 'Jan 15'. NEVER use relative time descriptions (e.g., 'yesterday', 'last week').
+### System architecture map
+MUST maintain a living architecture map documenting all components, responsibilities, and communication patterns. Include services, data stores, external APIs, message queues, and public/internal boundaries. Reference this map before modifying multi-component systems or adding new components. NEVER add components without explicitly mapping them to an existing architecture layer.
+
+## Workflows & Procedures
 
 <!-- Source: canopy-mvp (org) -->
-## Workflow documentation
-MUST document all workflows with: purpose, inputs, outputs, and decision logic. Use flowchart syntax or step-by-step format. Example: '1. Validate input → 2. Process → 3. Return result with status code.' Never generate undocumented conditional branches.
+### Workflow documentation
+MUST document all workflows with: purpose, inputs, outputs, decision logic. Format: numbered steps or flowchart (e.g., "1. Validate input → 2. Process → 3. Return with status"). Cover: deployment, CI/CD, data pipelines, user flows, error recovery. AI tools NEVER generate undocumented branches or skip documented steps.
 
 <!-- Source: canopy-mvp (org) -->
-## System architecture map
-MUST maintain and reference the system architecture map in all design decisions and code generation. Include architecture context in prompts; use diagrams or docs/architecture.md as reference. NEVER add components without mapping them to existing architecture layers.
+### Onboarding guide
+MUST maintain a current onboarding guide with: repo setup, dev environment config, key files, team conventions, ownership. AI tools MUST read this before generating code. Example: Document 'run `npm install && npm run dev`' not 'set up your environment'.
+
+## Decision Records
 
 <!-- Source: canopy-mvp (org) -->
-## Onboarding guide
-MUST complete project onboarding before writing code: verify setup steps, dependencies, and environment config. ALWAYS run `npm install && npm run setup` exactly as documented. Do NOT skip or modify onboarding steps.
+### Decision records
+MUST create ADR files (docs/adr/NNNN-title.md) for all significant technical decisions with context, decision, and consequences. Example: docs/adr/0001-use-postgres.md. Reference existing ADRs before proposing alternatives to settled decisions.
+
+## Temporal Context
+
+<!-- Source: canopy-mvp (org) -->
+### Temporal context
+ALWAYS use ISO 8601 UTC timestamps (YYYY-MM-DDTHH:mm:ssZ) in code and logs. Example: `logged_at='2024-01-15T09:30:45Z'`. NEVER use relative time strings ('last week', 'yesterday') or locale-specific formats. Store all times in UTC; apply timezone conversion only at display layer.

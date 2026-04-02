@@ -1,5 +1,5 @@
 ---
-description: Coding conventions & standards from Canopy (canopy-mvp)
+description: Coding conventions & standards from Canopy (canopy-mvp, locked)
 globs:
 alwaysApply: true
 ---
@@ -7,6 +7,17 @@ alwaysApply: true
 # Conventions
 
 <!-- Source: canopy-mvp (org) -->
-## Structured error handling
-MUST use try-catch blocks with specific error types, log errors with context, and return structured responses. NEVER swallow exceptions silently. Example: catch(SpecificError) { logger.error({code, message, context}); return {success: false, error}} instead of generic catch-all.
+## structured logging
+ALWAYS log as JSON objects, not strings. Example: `logger.info({ userId: '123', action: 'login', timestamp: now })` instead of `logger.info('user 123 logged in')`.
 
+<!-- Source: canopy-mvp (org) -->
+## styling conventions
+NEVER use inline styles. ALWAYS use Tailwind CSS classes. Inline styles prevent consistent theming and responsive design. Example: `className="px-4 py-2 text-lg"` not `style={{padding: '16px 8px'}}`.
+
+<!-- Source: canopy-mvp (org) -->
+## input validation
+MUST validate all query params, body fields, and path vars. Check types (string vs number), ranges (limit > 0), and required fields. Example: `if (limit < 0 || isNaN(limit)) throw new Error('limit must be positive integer')`.
+
+<!-- Source: canopy-mvp (org) -->
+## error response format
+MUST return errors with structure: {"error": "<code>", "message": "<user-facing>", "details": "<dev-context>"}. Example: {"error": "AUTH_FAILED", "message": "Invalid credentials", "details": "JWT expired"}. NEVER expose stack traces or internal paths in client responses.
