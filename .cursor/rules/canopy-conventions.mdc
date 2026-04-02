@@ -7,17 +7,17 @@ alwaysApply: true
 # Conventions
 
 <!-- Source: canopy-mvp (org) -->
-## structured logging
-ALWAYS log as JSON objects, not strings. Example: `logger.info({ userId: '123', action: 'login', timestamp: now })` instead of `logger.info('user 123 logged in')`.
-
-<!-- Source: canopy-mvp (org) -->
-## styling conventions
-NEVER use inline styles. ALWAYS use Tailwind CSS classes. Inline styles prevent consistent theming and responsive design. Example: `className="px-4 py-2 text-lg"` not `style={{padding: '16px 8px'}}`.
-
-<!-- Source: canopy-mvp (org) -->
 ## input validation
-MUST validate all query params, body fields, and path vars. Check types (string vs number), ranges (limit > 0), and required fields. Example: `if (limit < 0 || isNaN(limit)) throw new Error('limit must be positive integer')`.
+MUST validate all external inputs (query params, request bodies, config values) for type, range, and format before use. Example: enforce limit > 0 and < MAX, validate amount as positive number. NEVER assume inputs are safe.
+
+<!-- Source: canopy-mvp (org) -->
+## structured logging
+ALWAYS log structured objects, never string concatenation. Example: `logger.info({action: 'auth', user_id: 123, status: 'success'})` not `logger.info('user 123 authenticated')`.
+
+<!-- Source: canopy-mvp (org) -->
+## Tailwind CSS usage
+MUST use Tailwind CSS for all styling. Do NOT use inline styles or custom CSS classes—use Tailwind utility classes exclusively for consistency.
 
 <!-- Source: canopy-mvp (org) -->
 ## error response format
-MUST return errors with structure: {"error": "<code>", "message": "<user-facing>", "details": "<dev-context>"}. Example: {"error": "AUTH_FAILED", "message": "Invalid credentials", "details": "JWT expired"}. NEVER expose stack traces or internal paths in client responses.
+MUST use consistent error response structure across all APIs: {code, message, details}. Include HTTP status codes, error codes, and user-facing messages. Example: {code: 'INVALID_EMAIL', message: 'Email format invalid', status: 400}.
