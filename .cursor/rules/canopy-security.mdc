@@ -8,30 +8,107 @@ alwaysApply: true
 
 > ⚠️ LOCKED — These rules cannot be overridden.
 
+## Secrets & Credentials
+
+<!-- Source: canopy-mvp (org) -->
+### No hardcoded secrets
+NEVER commit API keys, passwords, tokens, or connection strings. Flag patterns: `sk_live_`, `AKIA`, `-----BEGIN RSA`, `Bearer `. MUST load secrets from env vars or Vault. Block any PR containing literal secrets.
+
 ## Injection Prevention
 
 <!-- Source: canopy-mvp (org) -->
+### Input validation at system boundaries
+MUST validate every value crossing a trust boundary (requests, webhooks, queues, uploads) against an explicit schema before use. NEVER rely on client-side validation alone. Use: Zod, Joi, JSON Schema, Pydantic. Reject invalid input early with error code and safe message.
+
+<!-- Source: canopy-mvp (org) -->
+### Context-appropriate output encoding
+MUST encode user-supplied data based on output context: HTML entity encoding for HTML, URL encoding for URLs, shell escaping for commands. Flag: `innerHTML`, `dangerouslySetInnerHTML`, template string interpolation. Use: framework auto-escaping and context-specific encoder functions.
+
+<!-- Source: canopy-mvp (org) -->
 ### Parameterized queries only
-NEVER concatenate user input into SQL/NoSQL/LDAP queries. ALWAYS use parameterized queries (`$1`, `?`, `:param`), prepared statements, or ORM bindings. Flag: `query("SELECT * FROM users WHERE id = " + id)`, f-strings in SQL, `${variable}` in queries. Use instead: `query("SELECT * FROM users WHERE id = $1", [id])`.
+NEVER concatenate user input into SQL/NoSQL/LDAP queries. MUST use parameterized queries ($1, ?, :param), prepared statements, or ORM bindings. Flag: `query("SELECT * FROM users WHERE id = " + id)`, f-strings in SQL, `${var}` in query strings. Use: `query("SELECT * FROM users WHERE id = $1", [id])`.
 
 ## Data Privacy & PII
 
 <!-- Source: canopy-mvp (org) -->
 ### Never disable TLS/SSL verification
-NEVER set `rejectUnauthorized: false`, `verify=False`, `InsecureSkipVerify: true`, or `NODE_TLS_REJECT_UNAUTHORIZED=0` in HTTP clients, database connections, or API calls. Flag as CRITICAL if found. Use proper certificate chains; for local dev, use mkcert to create locally-trusted certificates instead.
+NEVER use `rejectUnauthorized: false`, `verify=False`, `InsecureSkipVerify: true`, or `NODE_TLS_REJECT_UNAUTHORIZED=0`. CRITICAL in all HTTP clients, database connections, API calls. For local dev, use mkcert to create locally-trusted certificates instead.
 
 <!-- Source: canopy-mvp (org) -->
 ### Encrypt sensitive data at rest and in transit
-MUST use TLS 1.2+ for all network communication and AES-256+ for data at rest. NEVER store passwords in plaintext or use MD5/SHA for hashing; ALWAYS use bcrypt, scrypt, or argon2. NEVER implement custom crypto—use only established libraries (crypto, libsodium, openssl).
+Check for: plaintext password storage, unencrypted database connections, HTTP (not HTTPS) API calls.
+Required: TLS 1.2+ for all network communication, AES-256 or equivalent for storage.
+Passwords: always bcrypt, scrypt, or argon2 with appropriate work factors. Never MD5 or SHA for passwords.
+Never implement custom cryptographic algorithms. Use established libraries (crypto, libsodium, etc.).
+
+<!-- Source: canopy-mvp (org) -->
+### Data minimization
+NEVER use `SELECT *` or return entire records. Query only required columns; return only required fields. Example: return `{name, id}` not `{name, id, email, phone, metadata}`. Over-collection increases breach blast radius and regulatory exposure.
 
 ## Authorization & Access Control
 
 <!-- Source: canopy-mvp (org) -->
 ### Authorization on every endpoint
-MUST verify user permission before executing any operation. Every /:id route MUST check `user.id === resource.ownerId || user.role === 'admin'` and return 403 if false. NEVER skip authorization checks; NEVER trust client-side filtering.
+Check for: API endpoints that check authentication (who you are) but skip authorization (what you can do).
+Flag: missing ownership checks on object-level routes (`GET/PUT/DELETE /:id`), admin endpoints without role verification.
+Required: verify the authenticated caller is authorized for the specific operation on the specific resource.
+Never rely on client-side route guards as the only access control. Enforce server-side.
+BOLA/IDOR (accessing other users' data by changing an ID) is the #1 API vulnerability.
+
+<!-- Source: canopy-mvp (org) -->
+### Principle of least privilege
+NEVER use admin/root credentials at runtime, wildcard IAM permissions, or SUPERUSER database roles. ALWAYS scope each service account, DB user, and IAM role to minimum required permissions. Example: DB user gets SELECT-only on 3 tables, not SUPERUSER on schema.
+
+<!-- Source: canopy-mvp (org) -->
+### Never implement custom authentication
+NEVER write custom password hashing, JWT validation, session management, or OAuth flows. MUST use Auth0, Firebase Auth, Cognito, or Clerk. Custom auth introduces timing attacks, insecure token generation, and improper session invalidation—use existing proven providers instead.
 
 ## Destructive Operations
 
 <!-- Source: canopy-mvp (org) -->
 ### No unguarded destructive operations
-NEVER execute DELETE, DROP, rm -rf, git push --force, or git reset --hard without explicit user confirmation. MUST implement soft deletes, provide rollback scripts for migrations, and require confirmation flags for all destructive operations. Example: Use UPDATE is_deleted=true instead of DELETE.
+NEVER execute DELETE, DROP, rm -rf, git push --force, or git reset --hard without explicit confirmation flag. Use soft deletes and rollback scripts. AI tools must block all irreversible operations on production.
+
+<!-- Source: canopy-mvp (org) -->
+### Database changes through migrations only
+MUST use Drizzle/Prisma migrations for all schema changes. NEVER run direct ALTER TABLE or manual queries against production. Every migration requires a rollback script and peer review before execution.
+
+## Dependencies & Supply Chain
+
+<!-- Source: canopy-mvp (org) -->
+### Pin dependency versions
+Check for: `*`, `latest`, `>=` in production dependencies. Flag as HIGH.
+Required: exact version pins or a committed lockfile (package-lock.json, pnpm-lock.yaml, poetry.lock, go.sum).
+Always commit the lockfile to version control.
+Unpinned dependencies mean your build can break or become compromised between runs without any code change.
+
+<!-- Source: canopy-mvp (org) -->
+### Verify package identity before installing
+Before adding a dependency: confirm the exact package name and publisher.
+Check for: typosquatting (`lodahs` vs `lodash`), namespace confusion (`@company/utils` vs `company-utils`).
+Verify: repository link matches, download counts are reasonable, publication date is not suspiciously recent.
+Never install a package based solely on an AI suggestion without verification.
+
+<!-- Source: canopy-mvp (org) -->
+### Minimize new dependencies
+Before adding a package: check stdlib and current deps first. Avoid packages for trivial tasks. Require active maintenance, broad adoption, and clean security record. Each dependency is attack surface and maintenance debt.
+
+## Error Exposure
+
+<!-- Source: canopy-mvp (org) -->
+### No internal details in error responses
+NEVER return stack traces, SQL statements, file paths, or database errors to clients. MUST return: `{"error": {"code": "ERROR_CODE", "message": "Safe message", "requestId": "..."}}`  Centralize error handling to sanitize before response.
+
+## Resilience
+
+<!-- Source: canopy-mvp (org) -->
+### Explicit timeouts on external calls
+MUST set explicit timeouts on all HTTP, database, and API calls (e.g., `signal: AbortSignal.timeout(5000)`). ALWAYS limit request size, uploads, and pagination. Missing timeouts cause cascading outages.
+
+<!-- Source: canopy-mvp (org) -->
+### Idempotent operations
+Event handlers, queue consumers, and webhook processors MUST be idempotent using idempotency keys or upserts. Calling twice with same input = same result. Non-idempotent handlers corrupt data on retry.
+
+<!-- Source: canopy-mvp (org) -->
+## PII in logs
+NEVER log or expose: passwords, SSNs, credit cards, email addresses, phone numbers, or auth tokens. Redact PII before logging: `{ userId: '***', email: '[REDACTED]' }`. Use hashed identifiers in responses. Example: return `{ id: hash(ssn) }` not `{ ssn: '123-45-6789' }`.
