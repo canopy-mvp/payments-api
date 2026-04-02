@@ -7,17 +7,13 @@ alwaysApply: true
 # Conventions
 
 <!-- Source: canopy-mvp (org) -->
-## input validation
-MUST validate all external inputs (query params, request bodies, config values) for type, range, and format before use. Example: enforce limit > 0 and < MAX, validate amount as positive number. NEVER assume inputs are safe.
-
-<!-- Source: canopy-mvp (org) -->
 ## structured logging
-ALWAYS log structured objects, never string concatenation. Example: `logger.info({action: 'auth', user_id: 123, status: 'success'})` not `logger.info('user 123 authenticated')`.
-
-<!-- Source: canopy-mvp (org) -->
-## Tailwind CSS usage
-MUST use Tailwind CSS for all styling. Do NOT use inline styles or custom CSS classes—use Tailwind utility classes exclusively for consistency.
+ALWAYS log structured objects with fields (timestamp, level, context, error), never plain strings. Example: `{"level":"error","action":"auth_fail","userId":"...","message":"..."}`. Enables parsing, filtering, and monitoring.
 
 <!-- Source: canopy-mvp (org) -->
 ## error response format
-MUST use consistent error response structure across all APIs: {code, message, details}. Include HTTP status codes, error codes, and user-facing messages. Example: {code: 'INVALID_EMAIL', message: 'Email format invalid', status: 400}.
+All error responses MUST follow the project's established format consistently. Identify the format in existing error handlers and replicate it exactly. Do NOT invent new error structures or field names.
+
+<!-- Source: canopy-mvp (org) -->
+## Tailwind CSS usage
+MUST use Tailwind utility classes only; NEVER write custom CSS. In shared components, use @apply sparingly for reusable patterns (e.g., button base styles). Define component-specific utilities in tailwind.config.js, not inline.
