@@ -5,3 +5,15 @@ alwaysApply: true
 ---
 
 # Conventions
+
+<!-- Source: canopy-mvp (org) -->
+## structured logging
+ALWAYS log with: timestamp, level, context (userId, requestId), message, error stack. Format: `{"level":"error","requestId":"...","error":"...","code":500}`. Never log sensitive data (passwords, tokens). Use consistent error codes across endpoints.
+
+<!-- Source: canopy-mvp (org) -->
+## tailwind css usage
+NEVER use inline styles—ALWAYS use Tailwind CSS classes. Example: `className="fixed inset-0 bg-black/50 flex items-center justify-center"` instead of style objects. Tailwind is the exclusive styling method for this project.
+
+<!-- Source: canopy-mvp (org) -->
+## error response format
+ALWAYS return errors as `{ error: { code: "ERROR_CODE", message: "description" } }`. Never return raw exceptions or unstructured messages. See API standards for complete format.

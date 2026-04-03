@@ -10,10 +10,18 @@ alwaysApply: true
 
 <!-- Source: canopy-mvp (org) -->
 ### No silent error swallowing
-NEVER use empty catch blocks or bare `except: pass`. Every catch MUST handle (log with context, retry, or fallback), re-throw, or include a comment explaining why it's safe to ignore. Example: `catch(e) { logger.error('Failed to fetch user', {error: e}); return null; }`
+NEVER use empty catch blocks, bare `except: pass`, `catch(e) {}`, or `.catch(() => {})`. Every catch block MUST handle the error (retry/fallback/log with context), re-throw it, or include a comment explaining why it's safe to ignore. Example: `catch(e) { logger.error('Payment failed', {orderId, error: e}); throw e; }`
 
 ## Testing
 
 <!-- Source: canopy-mvp (org) -->
 ### Tests required for new logic
-MUST write tests for new functions, endpoints, and behavioral changes. ALWAYS include: happy path, one error case, boundary conditions. Place tests per project pattern. Untested code silently breaks during refactoring.
+MUST include tests for all new functions, endpoints, and behavioral changes. Minimum: happy path test, one error case, one boundary condition. Use the project's existing test framework and directory. Example: for a new payment endpoint, test success, invalid amount, and zero/negative values.
+
+<!-- Source: canopy-mvp (org) -->
+## input validation
+MUST validate all inputs (query, body, params) with Zod before processing. Example: `z.object({reference_id: z.string().uuid()})`. Return 400 with validation error, never proceed with invalid data.
+
+<!-- Source: canopy-mvp (org) -->
+## repository pattern
+MUST access all databases through repository classes (e.g., WebhookRepository, ChargeRepository). NEVER use Prisma directly in service code. Example: call webhookRepository.findById(id) instead of prisma.webhook.findUnique({where: {id}}).
