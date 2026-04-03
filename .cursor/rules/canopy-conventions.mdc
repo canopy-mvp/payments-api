@@ -5,15 +5,3 @@ alwaysApply: true
 ---
 
 # Conventions
-
-<!-- Source: canopy-mvp (org) -->
-## structured logging
-ALWAYS log structured objects with fields (timestamp, level, context, error), never plain strings. Example: `{"level":"error","action":"auth_fail","userId":"...","message":"..."}`. Enables parsing, filtering, and monitoring.
-
-<!-- Source: canopy-mvp (org) -->
-## error response format
-All error responses MUST follow the project's established format consistently. Identify the format in existing error handlers and replicate it exactly. Do NOT invent new error structures or field names.
-
-<!-- Source: canopy-mvp (org) -->
-## Tailwind CSS usage
-MUST use Tailwind utility classes only; NEVER write custom CSS. In shared components, use @apply sparingly for reusable patterns (e.g., button base styles). Define component-specific utilities in tailwind.config.js, not inline.

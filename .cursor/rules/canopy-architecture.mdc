@@ -10,14 +10,10 @@ alwaysApply: true
 
 <!-- Source: canopy-mvp (org) -->
 ### No silent error swallowing
-NEVER use empty catch blocks or bare `except: pass`. Every caught error MUST be logged with context, re-thrown, or handled with retry/fallback. Example: `catch(e) { logger.error('Payment retry failed', e); throw e; }`. Silent failures hide data corruption and cause undebuggable outages.
+NEVER use empty catch blocks or bare `except: pass`. Every catch MUST handle (log with context, retry, or fallback), re-throw, or include a comment explaining why it's safe to ignore. Example: `catch(e) { logger.error('Failed to fetch user', {error: e}); return null; }`
 
 ## Testing
 
 <!-- Source: canopy-mvp (org) -->
 ### Tests required for new logic
-MUST write tests for all new functions, endpoints, or behavioral changes: happy path, one error case, and boundary conditions. Follow the project's test framework. Place tests in the established test directory alongside source files.
-
-<!-- Source: canopy-mvp (org) -->
-## repository pattern
-MUST use the repository layer for all data access. Route handlers call repos, repos call data stores. Do not query directly from handlers or services.
+MUST write tests for new functions, endpoints, and behavioral changes. ALWAYS include: happy path, one error case, boundary conditions. Place tests per project pattern. Untested code silently breaks during refactoring.
