@@ -10,18 +10,18 @@ alwaysApply: true
 
 <!-- Source: canopy-mvp (org) -->
 ### No silent error swallowing
-NEVER use empty catch blocks, bare `except: pass`, `catch(e) {}`, or `.catch(() => {})`. Every catch block MUST handle the error (retry/fallback/log with context), re-throw it, or include a comment explaining why it's safe to ignore. Example: `catch(e) { logger.error('Payment failed', {orderId, error: e}); throw e; }`
+NEVER use empty catch blocks, bare `except: pass`, or `.catch(() => {})`. Every catch MUST handle the error (retry/fallback/log with context), re-throw it, or add a comment explaining why it's safe to ignore. Example: `catch(e) { logger.error('Payment retry', {orderId, error: e}); }` instead of `catch(e) {}`.
 
 ## Testing
 
 <!-- Source: canopy-mvp (org) -->
 ### Tests required for new logic
-MUST include tests for all new functions, endpoints, and behavioral changes. Minimum: happy path test, one error case, one boundary condition. Use the project's existing test framework and directory. Example: for a new payment endpoint, test success, invalid amount, and zero/negative values.
+ALWAYS write tests for new functions, endpoints, or behavioral changes. Minimum: one happy-path test, one error case, one boundary condition. Place tests in the project's established test directory using its framework.
 
 <!-- Source: canopy-mvp (org) -->
 ## input validation
-MUST validate all inputs (query, body, params) with Zod before processing. Example: `z.object({reference_id: z.string().uuid()})`. Return 400 with validation error, never proceed with invalid data.
+MUST validate all inputs (query, body, path) with Zod schemas before processing. Example: `z.object({reference_id: z.string().uuid()})`. Reject invalid requests with 400 errors.
 
 <!-- Source: canopy-mvp (org) -->
 ## repository pattern
-MUST access all databases through repository classes (e.g., WebhookRepository, ChargeRepository). NEVER use Prisma directly in service code. Example: call webhookRepository.findById(id) instead of prisma.webhook.findUnique({where: {id}}).
+MUST use repository classes (e.g., `WebhookRepository`, `ChargeRepository`) for all database access. NEVER call Prisma directly in service code. Example: inject `WebhookRepository` into service, call `repository.create()` instead of `prisma.webhook.create()`.
