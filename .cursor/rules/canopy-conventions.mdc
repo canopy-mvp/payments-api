@@ -8,12 +8,12 @@ alwaysApply: true
 
 <!-- Source: canopy-mvp (org) -->
 ## structured logging
-ALWAYS log with structured JSON: `{timestamp, level, service, user_id, action, resource, status, error_code}`. Never use unstructured strings. Enable alerting and tracing on all logs.
+Log all events with structured JSON: `{timestamp, level, service, userId, action, result, error}`. Never log PII directly; use IDs instead. Example: `{level: 'error', action: 'auth_failed', userId: 'u123', reason: 'invalid_token'}`
 
 <!-- Source: canopy-mvp (org) -->
 ## tailwind css usage
-NEVER use inline styles. ALWAYS use Tailwind CSS classes for styling. Example: `className="fixed inset-0 bg-black/50 flex items-center justify-center"` not `style={{position: 'fixed'}}`. See `.cursorrules` for Tailwind conventions.
+NEVER use inline styles or CSS-in-JS. ALWAYS use Tailwind CSS classes only. Example: `className="fixed inset-0 bg-black/50 flex items-center justify-center"` not `style={{position: 'fixed'}}`. See `.cursorrules` for Tailwind setup.
 
 <!-- Source: canopy-mvp (org) -->
 ## error response format
-ALWAYS return errors as `{ error: { code: "ERROR_CODE", message: "description" } }`. Example: `{ error: { code: "MISSING_PARAMETER", message: "reference_id is required" } }`. No plain text or custom formats.
+ALWAYS return errors as `{ error: { code: "ERROR_CODE", message: "human description" } }`. Example: `{ error: { code: "MISSING_PARAMETER", message: "reference_id is required" } }`. Never return raw stack traces or unstructured error text.

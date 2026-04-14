@@ -12,48 +12,48 @@ alwaysApply: true
 
 <!-- Source: canopy-mvp (org) -->
 ### Parameterized queries only
-NEVER use string concatenation, template literals, or f-strings in SQL/NoSQL/LDAP/OS commands with user input. MUST use parameterized queries (`$1`, `?`, `:param`), prepared statements, or ORM bindings. Example: `db.query('SELECT * FROM users WHERE id = $1', [userId])` not `db.query(`SELECT * FROM users WHERE id = ${userId}`)`. Injection attacks are trivially preventable.
+NEVER concatenate user input into SQL/NoSQL/LDAP queries. MUST use parameterized queries (`$1`, `?`, `:param`), prepared statements, or ORM bindings. Example: `query('SELECT * FROM users WHERE id = ?', [id])` not `query('SELECT * FROM users WHERE id = ' + id)`. Applies to all query languages and OS commands.
 
 ## Data Privacy & PII
 
 <!-- Source: canopy-mvp (org) -->
 ### Never disable TLS/SSL verification
-NEVER set `rejectUnauthorized: false`, `verify=False`, `InsecureSkipVerify: true`, or `NODE_TLS_REJECT_UNAUTHORIZED=0`. Flag as CRITICAL in all HTTP clients, database connections, and API calls. Use proper certificate chains; for local dev, use mkcert. Example: `https.request(url, {rejectUnauthorized: true})` not `false`.
+NEVER use `rejectUnauthorized: false`, `verify=False`, or `InsecureSkipVerify: true`. Always enforce certificate validation in HTTP clients and database connections. For local dev, use mkcert for self-signed certificates. Disabling verification allows MITM attacks.
 
 <!-- Source: canopy-mvp (org) -->
 ### Encrypt sensitive data at rest and in transit
-MUST use TLS 1.2+ for all network communication and AES-256 (or equivalent) for storage. NEVER store passwords in plaintext or use MD5/SHA; MUST use bcrypt, scrypt, or argon2. NEVER implement custom cryptographic algorithms—use crypto, libsodium, or framework-provided libraries only. Example: `bcrypt.hash(password, 12)` not `sha256(password)`.
+MUST use TLS 1.2+ for all network communication and AES-256 for storage. Hash passwords with bcrypt, scrypt, or argon2—never MD5/SHA. NEVER implement custom crypto—use crypto, libsodium, or equivalent established libraries. Example: `bcrypt.hash(password, 10)` for password storage.
 
 ## Authorization & Access Control
 
 <!-- Source: canopy-mvp (org) -->
 ### Authorization on every endpoint
-ALWAYS verify server-side that the authenticated caller is authorized for the specific resource/operation. Example: confirm user_id matches resource owner before returning `/:id` data. NEVER rely on client-side guards. Prevents IDOR.
+ALWAYS verify server-side that authenticated user can perform action on the specific resource. Check ownership on `/:id` routes and role on admin endpoints. Example: `if(resource.userId !== auth.userId) throw Forbidden()`. Never rely on client-side guards alone.
 
 <!-- Source: canopy-mvp (org) -->
 ### Never implement custom authentication
-NEVER build custom password hashing, JWT validation, or session management. ALWAYS use Auth0, Firebase Auth, Cognito, or Clerk. Custom auth has timing attacks, weak token generation, and broken invalidation.
+NEVER build custom password hashing, JWT validation, session management, or OAuth flows. MUST use the project's established auth system or proven provider (Auth0, Firebase Auth, Cognito, Clerk). Custom auth has timing attacks, weak token generation, improper invalidation. Use existing.
 
 ## Destructive Operations
 
 <!-- Source: canopy-mvp (org) -->
 ### No unguarded destructive operations
-NEVER execute DELETE, DROP, rm -rf, git push --force, or git reset --hard without explicit user confirmation. ALWAYS use soft deletes and include rollback scripts for migrations. Irreversible operations MUST require interactive confirmation before execution.
+NEVER execute DELETE, DROP, rm -rf, git push --force, or git reset --hard without explicit user confirmation. Require: confirmation flag, soft deletes over hard deletes, and tested rollback scripts. AI tools must never autonomously perform irreversible data loss operations.
 
 <!-- Source: canopy-mvp (org) -->
 ### Database changes through migrations only
-NEVER run direct ALTER TABLE, ad-hoc SQL, or manual schema changes. ALL schema changes MUST use migration tools (Drizzle, Prisma, Alembic, Flyway). Every migration requires a rollback script. Direct modifications bypass peer review and recovery.
+MUST use project migrations (Drizzle/Prisma/Alembic/Flyway) for all schema changes. NEVER run direct ALTER TABLE or ad-hoc SQL. Every migration requires a rollback script. Direct changes bypass peer review and rollback capability.
 
 ## Error Exposure
 
 <!-- Source: canopy-mvp (org) -->
 ### No internal details in error responses
-NEVER expose stack traces, SQL, database errors, file paths, or internal IDs in API responses. MUST return: `{"error":{"code":"SCREAMING_SNAKE_CASE","message":"user-safe text","requestId":"..."}}`. Use centralized error handler for all exceptions.
+NEVER return stack traces, SQL, file paths, or internal IDs in API responses. MUST use centralized error handler returning: `{"error":{"code":"ERROR_CODE","message":"Safe message","requestId":"..."}}`. Map all exceptions through handler before responding to client.
 
 <!-- Source: canopy-mvp (org) -->
 ## PII in logs
-NEVER log, expose in API responses, or store in queries: emails, phone numbers, SSNs, payment cards, auth tokens, or IP addresses. Use data masking (e.g., last-4 digits) or redaction. Encrypt sensitive data at rest and in transit.
+NEVER log, expose in API responses, or store in queries: email, phone, SSN, payment card, password, auth tokens, or user IDs. Mask or hash sensitive data. Example: log 'user_id=hash(12345)' not 'user_id=12345'. PII exposure enables identity theft and violates compliance (GDPR, PCI).
 
 <!-- Source: canopy-mvp (org) -->
 ## secrets management
-NEVER commit secrets (API keys, passwords, tokens) to version control. ALWAYS use environment variables or a secrets manager (e.g., .env.local, HashiCorp Vault). Scan commits for exposed secrets automatically.
+NEVER commit secrets, API keys, or credentials to code. MUST use environment variables or a secrets manager (e.g., .env, AWS Secrets Manager). Example: `process.env.DATABASE_URL`, not hardcoded connection strings. Scan commits for exposed secrets immediately.
