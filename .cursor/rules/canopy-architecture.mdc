@@ -10,18 +10,18 @@ alwaysApply: true
 
 <!-- Source: canopy-mvp (org) -->
 ### No silent error swallowing
-NEVER use empty catch blocks, bare `except: pass`, or `.catch(() => {})`. Every catch MUST handle the error (retry/fallback/log with context), re-throw it, or add a comment explaining why it's safe to ignore. Example: `catch(e) { logger.error('Payment retry', {orderId, error: e}); }` instead of `catch(e) {}`.
+NEVER use empty catch blocks, bare `except: pass`, or `.catch(() => {})`. Every catch MUST handle (retry/fallback/message), re-throw, or log with context. If safe to ignore, document WHY in a comment. Example: `catch(e) { logger.error('User signup failed', {userId, error: e.message}); throw e; }`
 
 ## Testing
 
 <!-- Source: canopy-mvp (org) -->
 ### Tests required for new logic
-ALWAYS write tests for new functions, endpoints, or behavioral changes. Minimum: one happy-path test, one error case, one boundary condition. Place tests in the project's established test directory using its framework.
+MUST write tests for all new functions, endpoints, and behavioral changes. Minimum: happy path test + one error case + one boundary condition. Use the project's existing test framework and location (e.g., `__tests__/` or `.test.ts` files). Example: if adding a user validation function, test valid input, invalid email format, and empty string.
 
 <!-- Source: canopy-mvp (org) -->
 ## input validation
-MUST validate all inputs (query, body, path) with Zod schemas before processing. Example: `z.object({reference_id: z.string().uuid()})`. Reject invalid requests with 400 errors.
+MUST validate all inputs (query, body, path) with Zod before processing. Example: `const schema = z.object({reference_id: z.string().uuid()}); schema.parse(req.query);` Reject invalid inputs with 400 status code.
 
 <!-- Source: canopy-mvp (org) -->
 ## repository pattern
-MUST use repository classes (e.g., `WebhookRepository`, `ChargeRepository`) for all database access. NEVER call Prisma directly in service code. Example: inject `WebhookRepository` into service, call `repository.create()` instead of `prisma.webhook.create()`.
+NEVER call Prisma directly in service code. MUST use repository classes (e.g., `WebhookRepository`, `ChargeRepository`) for all database access. Example: `const webhook = await webhookRepo.findById(id)` not `prisma.webhook.findUnique()`.
