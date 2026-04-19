@@ -10,18 +10,18 @@ alwaysApply: true
 
 <!-- Source: canopy-mvp (org) -->
 ### No silent error swallowing
-NEVER use empty catch blocks, bare `except: pass`, or `.catch(() => {})`. Every catch MUST handle (retry/fallback/message), re-throw, or log with context. If safe to ignore, document WHY in a comment. Example: `catch(e) { logger.error('User signup failed', {userId, error: e.message}); throw e; }`
+NEVER use empty catch blocks, bare `except: pass`, or `.catch(() => {})`. Every catch block MUST handle (retry/fallback/user message), re-throw, or log with context. If safe to ignore, add a comment explaining why. Example: `catch(e) { logger.error('Payment retry failed', {error: e, userId}); notifyOps(); }` not `catch(e) {}`.
 
 ## Testing
 
 <!-- Source: canopy-mvp (org) -->
 ### Tests required for new logic
-MUST write tests for all new functions, endpoints, and behavioral changes. Minimum: happy path test + one error case + one boundary condition. Use the project's existing test framework and location (e.g., `__tests__/` or `.test.ts` files). Example: if adding a user validation function, test valid input, invalid email format, and empty string.
+MUST write tests for all new functions, endpoints, and behavioral changes. Minimum: happy path test, one error case, one boundary condition. Use the project's existing test framework and place tests in the established test directory. Code without tests is treated as untested and subject to removal.
 
 <!-- Source: canopy-mvp (org) -->
 ## input validation
-MUST validate all inputs (query, body, path) with Zod before processing. Example: `const schema = z.object({reference_id: z.string().uuid()}); schema.parse(req.query);` Reject invalid inputs with 400 status code.
+MUST validate all inputs (query params, request body, URL segments) with Zod schemas before processing. Example: `z.object({ reference_id: z.string().uuid() })`. Reject invalid inputs with 400 status and schema error details. Never trust client data.
 
 <!-- Source: canopy-mvp (org) -->
 ## repository pattern
-NEVER call Prisma directly in service code. MUST use repository classes (e.g., `WebhookRepository`, `ChargeRepository`) for all database access. Example: `const webhook = await webhookRepo.findById(id)` not `prisma.webhook.findUnique()`.
+MUST route all database access through repository classes (e.g., `WebhookRepository`, `ChargeRepository`). NEVER call Prisma directly in service code. DO: inject repositories as dependencies.
